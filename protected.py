@@ -1,0 +1,105 @@
+
+import base64
+import zlib
+import sys
+import os
+import hashlib
+import time
+import getpass
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+# Obfuscated password (not visible directly)
+_ = "==AQjEjM1EjNxMCQ"
+__ = _[::-1]  # Reverse to get actual password
+___ = base64.b64decode(__).decode()
+
+# Password hash for verification
+PASSWORD_HASH = "6ac2f75655e4b237ef6ea3f89feb4a2c418f15ec880b41f2b9b6c7a929c38e9e"
+
+# Anti-debugging
+def anti_debug():
+    if sys.gettrace() is not None:
+        print("Debugger detected! Access denied!")
+        sys.exit(1)
+    try:
+        import pydevd
+        sys.exit(1)
+    except:
+        pass
+
+# Check if trying to extract source
+def check_extraction_attempt():
+    import inspect
+    frame = inspect.currentframe()
+    if frame and 'inspect' in str(frame):
+        print("Source extraction detected! Access denied!")
+        sys.exit(1)
+    if 'extract' in sys.argv or '--extract' in sys.argv:
+        print("Extraction attempt detected! Password required!")
+        return True
+    return False
+
+# Password verification for extraction
+def verify_password():
+    print("="*50)
+    print("SOURCE CODE EXTRACTION PROTECTED")
+    print("="*50)
+    attempts = 0
+    max_attempts = 3
+    
+    while attempts < max_attempts:
+        try:
+            password = getpass.getpass("Enter extraction password: ")
+            if hashlib.sha256(password.encode()).hexdigest() == PASSWORD_HASH:
+                print("✅ Password correct! Extracting source...")
+                return True
+            else:
+                attempts += 1
+                remaining = max_attempts - attempts
+                print(f"Wrong password! {remaining} attempts remaining")
+        except:
+            print("Error reading password")
+            attempts += 1
+    
+    print("Too many failed attempts! Access denied!")
+    sys.exit(1)
+
+# Main execution
+try:
+    anti_debug()
+    
+    if check_extraction_attempt():
+        verify_password()
+    
+    salt = base64.b64decode("c2FsdF9mb3Jfc2VjdXJpdHk=")
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=250000,
+    )
+    
+    # Password is loaded from obfuscated variable
+    key = base64.urlsafe_b64encode(kdf.derive(___.encode()))
+    fernet = Fernet(key)
+    
+    encrypted_data = b'gAAAAABqRodXnJYtSJQwnyVFh1V8zUZas_rSgZLQsAV1EmNfAyiZ_B3spK8BW7DuVB5375RIu1rCdm5pmVrFKlsNoPCYlFkSsBmbbpDoyS-4bivF4Qp0_Nztgplt1TK-JjIvimBWStdCBaZ7rcRelTNQtYPkzpi_mPAlijkc8i_aHP6CwuDE6mKLV7VmKDwukNYYID2shHwabz7EpiZXoh8T_LYvGHjFdkTP9nAuN3YQqiGO30eChgjkPFXRDi9f8VIBIObcTxaxZvhDuFGdUhgSaV0dI2YFJP6riDKPjYDrju8vH1b79lI8GEGtXpRELSfZHKGQ0ETWkKtugw1IoKYvkHTzX5PV_sHMt0evN6WM3JWwy67D22EyRb6L-v9VgR1lFCgQTaMWQN5-FzAzphqXqudkwpXGQf44RYw-102eGZs5kFyDuk26mNOE-qgoEDCurjoEjLwyt3pK8IfHZIJQ2lDYoFfkibblSzZI6bHdHGuyM-DkHSVY71kQS2d3YKdM670fS0QicIYY_VM1hO-RktnNQS2WqUfE3hrmcCQmVwquqi7kMfPIieNe0PxUc-aXFqfuMyKRCk2Izg3EMOT2YyKcLAskYTicRFgVFTKkgYKe7PMnXgEPALvfz1_soyRdpI_-9O7ZumneX2ZwWLgpIlMQeBKWzZLVFH02DC_Wx94L6yBx3HuA_OYnNktj-7n1jGln6sWCPIzxDMNS6uICLvsigxCC4h_rKBAveyrfP33sCN72LQ-EtGWaSPtp7GUfbHWGs3sHQURIpBDiaFlCdgk7BuhF0y60afBTaOSTKK3S1jKvHbgTKh-nepOVFzIIJwJXLp7HPHyW-ToIzXIKhy7mgDoepj37MTbYfBFUyXEcsggSDzg0aKTbrX1bQCgsT035c4h9z9C8-hey-jn14BEnI_OxyhOuHNrJ1AEISvyUm6jJjC170UUX17YE5bG-RCToydtVpJbZ3ko_6AxXRHkdxeO54eLU4_TmKpU2hzK5KhEKFEH1DOaFSEYS4cSSkf6Otn_16DofNQ37INt31OA_OPahEpkJ4KbsSNkzzq44b_tNQkH-jL_a8TEjwgfXzijMgyt06_1VYfhaqshABgwEzIg6kUbgxg94oPoUbQ9nUfMQkL99Vf1UFiqmx_Rn0yUaz-g0JCwnoOjzHvHJSgZOLAAUpW4Z7Z7Sd27WMTzWWL5mimNgIyFO2KJtShnwTljByvYeKCt8lVAfAb4J-qe8gDaWwBzQcXYxZxKsBEXKx2VkSiSs9N6QRfJbLuO64RspaEBcCQQPAFrmT1BSBHtnBZWl0aR8F47uwVoe9RIsqz69Ry708xyzNdDEN_1Mmbov3zXpBafnADiR2XgLCcRd58NxSKaXmCZsapw5Pm_dgy-xczvq8PsQGR065Gm_7__Og7kp1dXDgjzR66OyWJF0CinABbSsrmGWhd6ciIPqIzPeWOrCYGNXQdAgq4BgB5ljaQek0vh4zEUplr_yjGO-EvW_mMiwsyRjfx24p8F9dN37JaH0dYGIXQZiwmxaoHML1M76pmHugvd2tX03W-zMWZC1dYd-WJ6tTX08vDC4u8SQ8ZgyquWag2V3VjCl1ZVpvI8o1_WXX8cwoqkgrzONlpK2dftGwCzMiBCaaoYS6pTmeqOsb_q2d2KRQXULm7YB-CErAhjTkN0fKKf4uScCwDuDAt9pGkxFcg4_MILTPFn6cHthLh8ompsvwGGVzCVvTri7oZQa6rJ6ioHR0kVoLPIQZC9KVb0UvbszX9tLFZ6xewHVVBvKYgd4KzWPnSfYL-a0Y9J6ewDKXYZFdatCleEaNud2Ua7fPLWplLehQ3OU3wZJR_weCPOUuP7zwMxFylgumpqqpM4BIOpVsZFKhhtunhjOYyZBZJHAAtCphGj9quY0V9N3SpVkfEJD-FS-iOITzazzzeNif-1xErgSquQjxA0UbcWD1B6BPlv2AWuKjj4saKmeJhSeQVFjz664vpw-C8aNpYcjA71itrMugaZkhya1WO_58QrvhhM8IZ7tlNvwVEiaIsOZ0ZTFZFTMhJdTxjR9qoHKUTPZU2tZRWwt31Tb8EJzL86kfsuKZN3jMM8tZQrMh2YW6znXmHSBYyXqHgp3iM-dI6RtONaKUQQGkeqQv081jageQ8OHONbRDzND4x2uy50dlc7EsO9leO1ql_7yidMi3ZcGnhyySCLvNl_RFjIMvWZTtjzkPaEYOC88QgKACPqrwZJHv3f8eeV22QG6Gymb3wHm4dDO6ovGgjEDPcM7Fxs08sgQgerTvKGzEN8adjFhm-JYXDLcuyRSYx7W0QhaeH8GsoWUy9h3HuIFBr5gBOK48mY76qL7LLV_PhGXulwgIr0KJAhEJIHjvrvVZmNAueOdevcFfmpHCj4WkHpY5T7HohmKhGIQBxNqjV3sfrBcCC0RSyKtvqe7sanZv9pEcDvwv5PWtXPlhRtkwUHUXB4rbY9UGFe3F0tvLczUjIRPHveowlBA1dpGZpwESKKE_uZ1jrKHTDcPRHfzL7qUbXCpkT5pyl3pVNexLm7ctQvxHIl-4iHGihwNeIJZYN8DGtCmSSoFaEU8znPOlTsCULzvY7qYTz9KO8VC7HutDlgLtIL6sLQUkhk3guP9Ne25IQIBjGB4dCy07O3glO93cUtNdknk6jKjee-IenKFHgh5MWX2z71Akvm9Q66ibHUxeHb3ThP--KcEV6l_M72mPoRo1uke3ZjL5170Vr2u_M8J0cJfnud2XbtZs4_xQ3abyyzT8FZWpd6S5WEHlk6GDFgwLTKuEAcyTsyu_XUAuZSjVixpFT7GYc8qjYPYR91L4wdD8eGvZ6TI48LUMQ61FQwteMKiiKq1VnZyc63l3pD4plKkWKOK8e2gU3y5EUrz4UYcCOL3CWIlQyzxvhJCWGirdGVXXQi1ZIpNRobsMEIvMoprFMGRG5MOVaNV98WXAxWPKaPgkYmOCE5966lmgXazo7brIk_1MOFTQSdTGEr4uk9zkPuLua3WBLyJex0wT6acP8FZ0S5AeAvNnZXhkQoRp7tG57rG-ExFI45KMrp_UsnEfRfJg72Kk4kFVTomffUErgLc8l9Y8Rk5PXkA7hwHJc3fo46yFI6ItXjylPMlPGMubLLy-uE5FLC0J7daU71O2yUDivEoOHXsKTiy2oBjrJZFSx6nLQaveNjIx7KuQAfhgzge63Uuj8Vm_KczWK4-vfCBaq6ZvmR-HwJcw3wIBRYYhhGXw7xbppABVS3WpPERc0VBtSQ9WqEfBZPaxa2Fy9j66Pe17H2q3ZiIoUJCldDmR3rQD3vRaBVwy3K0lw4zI4j6jhrZm4WRb5OF5yKJDMSfjhbYd5gdWSqkxz1Pv8zIBiSPTgVJ9eD1WwuF4uBI_M40SrIYOsQtcEoR0K6DYoV_XwgCj_kweIUWpn9CeWP46z5FLJDe8UOWEb2ShaawfSuPbhb7ERD6mvZevT_zWbZZveezak5YX5toM8r6lqwD99WLLKV5x-yd4uV0WBsHCueMs1-oXIhYzMMKT2yQLVqr7RISfQQPRKHYtwKMquHseNe9KtmV8-DZK6DuP2lbsar9ehp_QTNv5CxzY_WSPHKYjJOOCXymwOpyAbgB02QmvCss_rSseu0CeBK7zzkyuif0wwenKg__T-gXRXESa7Q2mjunh1hrIWOG_xgfYBDRCk5Hi7F6-oUa5wCiygKWe4GKMtV96vyf0YmxtxJgJWoCpCrky6QIL3mS5b_ZELA7Mt0jw_PdQuOO-8qbhTmPBhuf7TZBQz3JwfyA37kK7ULqGC2w9h8zMNgCyntApdWIDcGtBhT_P5WWaCjs5nQ2Icqrh9ox_9wkeqvkOpLN0W_b2eUO454mO5EarSUg5zAIE4S43FKKvuLUfpfTnhY51NzmnT2o1SQiEWwMqfl19ck9Uxn-4Egk22czFWc5JX9DbUQtsW9PuT-POGyOotT1Q6R02jIidg9Q54zaF--P4AV0LBLbuFuSUO02yeJyckrEEeCy8vuUoKOpeEpWuw6m8RVleW230Dc55JOS_3tJxuhR5f9MtEX9cHXkqV9fopKEtRDlhhnZdHHQmQoaMT8J7_3gzuCAiCgLEB0kfdv8wBcwXiwe0HeeJYGEQ4zVXhCvTy8g28kNnxX4ll4IXV6YwguSAmf1YRrZ5AhUN8yBeIDpNYJli8xgpO0wRCvmX0eCRmkROmGHoR7iXbeeyrYrEsPCRF_vjJ1PkML8fxuZBsqYhS9K2olOuslj2DNf-Au85JsM_CLb_SAHw7xD3e38axiyc6J8azVKhguJwNax_t7wljFo5qwJX7Egb-7IDV4hP-a5iPHUvjbDrCB8E1n9RRsovDGAgZFqCsBGsNEQSnMXx7Iy0kQyJiquMkxbggGeYhNF7SuUc0WbWO6nLdgdMKBU0cpSLh1GCbfG8mM0cdVqZ40k7lrYtzwZsmjC1cra5bdtnCh02DyBay37vyOmS0xKygUUn0AU2g_WiLrYTDZFvxwfpaCgHWQU5cnG_mytNVuHu983o61ghFw9D3mT4B-fJ7tb6_y8d49QVQbg9s3kLxtetlm8WJ_mosUMY5Yf-bhH4gDKvz2naArUXmNdg3j6afiCkK1vjXOt9gLBXnz9p8kTfaZqJMn4-nOGUiwGVM0BitPqp7PCMKfgheia6vwm4R28RkInt65E7ii6e0A1U00CdtB8QRqCLPDVelTuHuFHG5lW3AaYFEpCtgKWiDhvhMxbY6xcVQWJV6k1vSHCUyNXG3pUTzJe5fetFq2A9o86mmYcmfGElZ-hiDPZRs36RZay8zjLCINH7rPK3TzExp9pBFy12ra7j7P3PpaOTjmCklkdQWKQLX_0-Q5sNYAikc2_qXHZIhQY1azUwWncTR9lNt_qgeW1XiDS-jiRjYfl66qPVUMC3xNzJe0HSCbxvqNqvw8lOtGTkX8odeTY1aJBgr4b96Rn0eONWHaiLYbOaOfCU20Jm-PwiycpmpF0DekIDSqkvV9MCD5a_E5QAgUGTUsa5zbX4LChUU3a5neg--eQCNZPPiyfjctdd6T9xsYNNwPX3m4lWpCzCerSB_Cui0OMou7fp3sy1Vac9S4lnBkBL5IucK1Vq1KvCkSfjcogFHjOz8IpGOceDetB2zrEt2Bsrt1Pz1xaOebHpUzTueIt3iug4vgtbup80rTo9Vawvjeh44wUt6bXoP3UgjsI8ZkPpxBUdnyO5ewxwR0h0mVGgcN6E7WV9wJvYe_fa_KI1Rf53yzmukTkhlMkjszxyyQz9lgLTminHRY2TYTc-qndEgLidYHBtdQ-wawIeaKAkPWCRB6O4MbiF5S6tmCZgIvjQ63kbxsiJmUC4tc3k3loEjAHvoC5hmWPqyu4wSdqxwpwQRhP8-8GzoiTAowShU3lTU7QwCDrIKz3t8TAnlAkd_gL04w8QTPPDkH2ZtBkfiAMIR81wG3zSZLolFglwVsiRXnWCRVnNoujpBTrO-FHZnAq4bkMO_UQaeeM2JAkvgnOc5fd8zphfF85kM0gidpwgZZ5eBzFF2OTo_f-pM7GtW92o0mk7Jd_eIbAYMMCXmqCbEGYjqq2iBO1kHSQtmlWoIxwg4q1nIn6z8dtTnLiOhsfsStZwM8Hzq8L51M-hqeEN3NQAKYnJZLUzHC8XvDa6TeanuiUlmciOiH63DVnY0H_r4zfe-PNiwlFr8ixVmBApEv49NL94dzmUrfra2AIFh7BN5C0k-Dpc429wmLbZ3UdGRKPoiZywMbj3u0IoHgfIxa5JPqOKY-nrfDLKB-cyqEQpNCqHZ22sopX72ufy0zidghGMRNHiHHiZa3XsWBp0LmndhbcGqgAoE0lHSodJA9Pnqx3Itd7ClndnBd2r9JQoYsksyT8owX4p-lPUZW92rWDEbgIj4BdTvYFxnj04PgWEt3dc_Qz13f4JsYDhyWiT4QCk1e7HeY_7tORg-wOE2X2jXYdwI0v1IgMHX7RXXBSCtaqtBTQAgxlSs1TxSvFSyZZuzFi7oPezRNlAYDRp15_wcTkGtQeemEODCyHC0NlfSMnJJvK9rapQp9nBSod8ZcU1r-5E-IIwF6KWpts9YFQ-26QsZA8Ph2ZW4qyujoa2FH3ebQ-gMynDOoWyNpcTVA8GAAIdvCyKRmPiRP6XsX0QR3dCBoikN1CfQRvdlt6_CI6pRvSf_yOI1ETOizVHwgMchjGK7w9FOIyC1ZVX9_MTfhJybPU1wbERiPsLX23f97c6VYWCPAa84IEIWgu3hFLKdpyKTiW76O7_JjbyYu8JeYx4uYcACePNFszg7c_V4WIVUmMsi_d000TDrQ6Wg2uCT9DZ6cUQf1xYH-7yCfbNHgRDNExnQH_Ozfljhp8Ji5f6ObAteTZkF7t4cik_wq216mFj7ODYLE3cQBl0LLpHjgTYHmd8jnVlPV7rFYXR84iwvHaJMjsZH6fnPsd1ZdidRvF_LZ6jJPW4pCMterkrz3oYatZL3ZHdyvgwtWW6rwSsuSvI_cHIoYqp4DOCAaMz-JKhO3GO46b4N2gQxLZ9Ezf33bQ2vLeNWcPKmZg4BoIWNJLADw7chTyK2RtnRyn9M8UTxjZwYvGzrVwlk6-rTg_L0CKd2UuMz9bYpTgLA9w9LXhf7tenIEQTIK_3HDYFU317wm7-wb0ajC-ipSe6TSA5VOYpA5Kb7Um0stdrWsw48pjhg_x-U0AZFEiyHWBKFiFRaNqUDAIBA39YdslTtiIMkLMivdcqMSCMMaVkM58Eoos3cnmtuNaxM9azBjAKezoSbOvbZaDzFOdBmv2sm1sEwgnuiy1w0adUL3e6niKDaJZis_92p7ab26QKp_-7obvYEQO8Ja4Q1pRREI9k9dTAghRIU3PH5uMexADYFk3BcftzvFyV0BVpCoDhG6HV88-W1rHKcjq3O1JWCI4EWeu0c1wangHZClrVrWK6LxgdTY5QqZvb_5t4XYaDQqPAFvX-W_9rHFNwqUQYwal8nCmmtAXF1rPcFQ07vo1Y0ACwM_EVayPx9twign8jfDnD9EpMWaZ6tDnZyj9RxouiRNJgNtzEk5H4b1VAUJFepIbkspqun3DPvy5VSQ5EIEcZ1Ekyej150fXMSJTrR8J3K0h_avLlA2AUTOwWsEfLcQxySSqyfXwQ3xthX7IW16kDcDuT9jZSKnFCGGqme_tVwKJCbaRbrPk1Ytnhoflp_u0HKiVpsCSNOeT0o6VdKzA6piO8kjoOmzNwDKx2wUlqg2_1-WIXuyvzWfP8tbf2SpeuxSy-y6pbvvARVEk2IYjvNXDcH3SpLlTn4kqXgzaZwpOIh9aQf6D-parpsAxyUo2q5qskjHkSSFCamTlJUJ8JUAFcyLfqrbww6uh2jsiV0VR1z0DV_crI66kBF1wUSmAajRUtxqljEKur44qnie1c3shbaDj8HSs730q78HcfZVq8U3oOlX-ks-mfqq7Q2nrljy_pHQFBSCYtzEjMYwqol7X0FdCcFphu7TJRbrwf8duLbDCfLg7wk_YOYVMou0JgBXvGa5o5-ntZBA9dcY73PTnKW3X5qvK9Dek3Eg9Gz595UadnLCwR6Y6EO6A0tbc30wlOQ0LP_SsHvVEd4Wa9JoAJRUaRimNgtxsMJUaTW61wHhsgO4mdXDokf7tfNMOh3V05_hg8m3pSkp1glGlDoVmq2OGzyye9jGQPDC3TGlPQKg_V1Lh654mplEKKFtDNfSq1B7K9Og8WTqCoYo-dGs9IAjjkXs7pjQ3pDmitcjXz74jbl8zGL9uui0pZR8nHoXDzKLUyEFRPabGCHUc9r4mkRzYber6Il2q3eE-ZSP2lelZlIa6Pfa-lZMgfAV35zF9oxGf-z4pEM59jJQsDbaozk-2ssA9Y7-ttlGDyyeC_TgK40-BOgFvMJmM1h-or_QZeV1qKm-Wnvu9WkNQM4V4vNPYkGNlArTAdsnFIMaSEAqXrC3kbdvZttTSbolSlMDatWm_fYW1LEQpmij5kd9xvQri2YJ9GmjB6zUChYeC3Uz-KUidjgJYyo6s3lfIPjddFc9zaLg4jN161KJkINqMb2RBeBXNx_fWaljVTC5uqc3vfisfi30THYjiuNQh1VIDZf2hlUSK0GaDjwvFAib-99gfJypMSRveR_qvoF3F20UhRhfFrKQevUUYWDwYaBaNZk695xinK3UL8EiVC6jvZ_Q7qf2yAL0rnu4_xvNQB2MFF1vPGGTBKHUqsEB7SXc07vbWT83OeBKGUcjUjX8JiW3gK5S9pwiKXMLz2Xo54zmKy1R9p0OBJnvuucjSJCml_k1Hub_IKqrFCCJNd78p7I5IvxhtNJR2TKRFUAs81NJ4_5hZ0xZdvShgdbu9QHjibnbpmdE-kVxto03eOgGcjv3lSgVgfbjVrcy6SVKZCJ-hMV10_vddl6ZTVAcIqr2oP-g8y2626mrLJImhaCp86oQJbX0uVl_iYaxJjdxdKbIXfQsaly9qNjW2nSBWQfmCs24Ee5q2xrriW_CDoilwWFcz-CE7kZxQyPqis_sD_Wa_ERQG-RzIolOcPakj1Adeqs1u0PVC7_-lmWT8ZvQjlgMp4NIzjE3jxZYsopaoJm2Co6OGG2-xMmQvblsHCKh8y4FzT6fAl2z7b-vpZlEUFcrfMx_E6FHpSdO2BR-Y_7WIgixFfzfW4cG3gswXiPSjUXYin1hayC2pM25kwP6ZAvgkcmiv8SmxKgM_thQt2zkNNtmRWeYSMyew-QJpHmP6k2IRfwmbDV6mjd0ZsvljcMVa7ldAp6EhttwvviMdq310BFuhBdEedw3QwJC2RS0zdLdPEF0rPQsOLhO3x4KKVcrErdewwIIYKCC_5jy9C_lwE4LwvPyznnsEoLU4xzVOEk3h3wtojbypiWafjOhwN28u1WZBJZn9qtRid_hrA6K0bbE0WNji0Ibb0MuPaPvrm5gznFAGVUxm5X2FyWH76gKboP6IQbLWfWqaNNnl4rKCFWnW5vnMzQxpehS5al8VpxLA34kqc0A167CN_WEWoiXsa5I2TmFzL_lrRUXzMIHsMEQcudqODXPgl-OZmNH6vH9A9mAqGZbFkJg1UmIu-6eE2rfk9TRMIgWE1ud4QwugR0CRPqKuiTZl0E5XnCJXNKbTsZORIV9z5JeDRx9-2X6s50svWczGu7bgUD1LGG8FYuNmF_Pw1GYDQkoUViUygTfxRxN-aJTtPBiuKgmDsdGMX1PkSG5s2OKIVk-tW5NQRiJ4m4ihTaMS2UpTo0m8Fce9tLGFAojY18OWPskZN39keB7AhNHnnd2sc7cplfUCUPcWZasghC_SOXMthH9Yf52gH00mtU27v1-PtiykOgaf78E5Y9s70RgeBwCEeE60991AgW1H55p3STqYaG2YcpQ4BM4bElXZluwfKTCmEP-LRBoWnYcOkD_udYS93sTw-seec1OjZI6EKZAH8X9tBelyJSwDEvcmeXKdt9xfGc4QmS2OLV0SmvmyhVMfAnubdl3NxDQ71D00UeuWV-6K-E-4mGfLXYkI5SoDt8sMDwlbbYA33juwAi-3NIiQVERjGzcP_YKgFxGqTM54ea_He6WFoYrPQTqXiWBuqCqEbUPr8FiSdl_w8AlyWXuo0hGjDMdHAC_C0dUcLA8cZ7j8ike4WTPreXFI2lIqIOpGv3WDZrb6vB0va2wtcDFNpPS4yhcvKvdzCFoEd2hfu4WgazGcWQzGqp34yLY-xMwkuAEGiI2DoYQibFMgQKZ5sy6RSm_8Rvaf-E2kht5nZ4D5Q2986DevbSlODjUVp-wVrlM6OLC5LDlbVlNjKQETt2rn4fCKuME93vmuQxTF7nQjrkHjS4AxYAHx0SJTICmdIv_FV2JH0FuFQZ8FN2FZfaEbTa_7O360KhBxrXXzhHImnJBtXPLPOPsW0Z2jMEB208Zt_5ma-qwAI7m4Q2aghAysUX0m2PD0dRUx7f6A6T0ZLEap1n9InLml-xfl-Hp97VzPCzQv'
+    decrypted = fernet.decrypt(encrypted_data)
+    decompressed = zlib.decompress(base64.b64decode(decrypted))
+    
+    if len(sys.argv) > 1 and sys.argv[1] in ['--extract', '--get-source', '--show-code']:
+        verify_password()
+        print("="*50)
+        print("PROTECTED SOURCE CODE:")
+        print("="*50)
+        print(decompressed.decode())
+        print("="*50)
+        sys.exit(0)
+    
+    exec(compile(decompressed, '<protected>', 'exec'))
+    
+except Exception as e:
+    print(f"Error: {str(e)}")
+    sys.exit(1)
