@@ -1,29 +1,48 @@
-import protected
-import inspect
+cat > Block.py << 'EOF'
+#!/usr/bin/env python3
+"""
+File Security Tool - Protected Executable
+"""
+import os
+import sys
+import base64
+import zlib
+import hashlib
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-# Tarmuxset ক্লাস ডিফাইন করুন (যদি protected মডিউলে না থাকে)
 class Tarmuxset:
     @staticmethod
     def auto_run():
-        """Auto run function"""
-        print("Auto running...")
+        """Auto run function for protected code"""
+        print("Running protected code...")
         return True
 
-try:
-    # চেক করুন auto_run মেথড আছে কিনা
-    if hasattr(Tarmuxset, 'auto_run'):
-        print("Auto_run arguments:", inspect.signature(Tarmuxset.auto_run))
-    else:
-        print("auto_run method not found")
-except Exception as e:
-    print(f"Signature not found: {e}")
-    print("Trying main...")
+def main():
+    """Main execution function"""
+    print("="*50)
+    print("FILE SECURITY TOOL")
+    print("="*50)
+    
+    try:
+        # Check for auto_run
+        if hasattr(Tarmuxset, 'auto_run'):
+            print("Auto_run arguments:", inspect.signature(Tarmuxset.auto_run))
+        else:
+            print("auto_run method not found")
+    except Exception as e:
+        print(f"Error checking signature: {e}")
+    
+    # Run protected main if exists
+    try:
+        if 'protected' in sys.modules:
+            protected.main()
+        else:
+            print("Protected module not loaded")
+    except Exception as e:
+        print(f"Error running protected.main(): {e}")
 
-# protected.main() চালানোর চেষ্টা করুন
-try:
-    if hasattr(protected, 'main'):
-        protected.main()
-    else:
-        print("protected.main() not found")
-except Exception as e:
-    print(f"Error running protected.main(): {e}")
+if __name__ == "__main__":
+    main()
+EOF
