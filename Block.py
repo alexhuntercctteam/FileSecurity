@@ -1,4 +1,4 @@
-import Securityfile
+import Security
 import inspect
 
 try:
@@ -7,4 +7,4 @@ except:
     print("Signature not found. Trying main...")
 
 # যদি main কাজ করে তবে এটিই ব্যবহার করুন
-Securityfile.main()
+Security.main()
